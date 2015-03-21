@@ -15,7 +15,8 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from openerp.osv import osv, fields
+from openerp.osv.orm import Model
+from openerp.osv import fields
 
 _campaign_states = [
     ('draft', 'Draft'),
@@ -24,28 +25,54 @@ _campaign_states = [
     ('cancel', 'Cancel')
 ]
 
-class Campaign(osv.osv):
+class Campaign(Model):
     """
     Class to configure data extraction campaigns
     """
     _name = 'swarm.campaign'
     _description = __doc__
 
+    def _collection_size(self, cr, uid, ids, fields, args, context=None):
+        res = {}
+        for campaign in self.browse(cr, uid, ids, context=context):
+            res[campaign.id] = campaign.items
+        return res
+
     _columns = {
         'name': fields.char('Name'),
         'init_date': fields.datetime('Start date'),
         'end_date': fields.datetime('End date'),
-        'tags_ids': fields.many2many('swarm_campaign_tag', 'swarm_campaign_tag_rel',
+        'tags_ids': fields.many2many('swarm_tag', 'swarm_campaign_tag_rel',
                                      'campaign_id', 'tag_id', 'Tags'),
+        'min_items': fields.integer('Min items'),
         'max_items': fields.integer('Max items'),
+        'resume_collected_items': fields.function(_collection_size, type='integer',
+                                                  string='Collected items'),
+        'collected_items': fields.one2many('swarm_campaign_item', 'campaign_id',
+                                           'Items'),
         'state': fields.selection(_campaign_states, 'State'),
     }
 
-class CampaignTag(osv.osv):
+
+class CampaignItem(Model):
+    """
+    Class to store data for extraction campaigns
+    """
+    _name = 'swarm.campaign.item'
+    _description = __doc__
+
+    _columns = {
+        'name': fields.char('Name'),
+        'campaign_id': fields.many2one('swarm_campaign', 'Campaign'),
+        'item': fields.text('Item'),
+    }
+
+
+class CampaignTag(Model):
     """
     Campaign tags
     """
-    _name = 'swarm.campaign.tag'
+    _name = 'swarm.tag'
     _description = __doc__
 
     _columns = {
