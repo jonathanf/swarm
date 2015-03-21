@@ -1,3 +1,4 @@
-** Swarm **
+Swarm
+=====
 
-Social network scrawler
+Is a social network scrawler module for Odoo
